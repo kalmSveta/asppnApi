@@ -1,0 +1,600 @@
+---
+asyncapi: 3.0.0
+info:
+  title: Common objects for all API of API Gateway
+  version: '1.0.0'
+servers:
+  prod:
+    host: localhost
+    pathname: "/"
+    protocol: https
+    description: |
+      Public server available without authorization.
+      Once the socket is open you can subscribe to a public channel by sending
+      a subscribe request message.
+  stg:
+    host: "192.168.1.1"
+    pathname: "/"
+    protocol: wss
+    description: |
+      Public server available without authorization.
+      Once the socket is open you can subscribe to a public channel by sending
+      a subscribe request message.
+channels:
+  asppnMain:
+    address: "/hub"
+    messages:
+      getUserSettingsRequest:
+        $ref: '#/components/messages/getUserSettingsRequest'
+      getUserSettingsReply:
+        $ref: '#/components/messages/getUserSettingsReply'
+operations:
+  changeUserSettings:
+    title: changeUserSettings
+    description: >
+      Команда позволяет изменить настройки пользователя
+    action: send
+    channel:
+      $ref: '#/channels/asppnMain'
+    tags:
+      - $ref: '#/components/tags/new'
+    messages:
+      - $ref: '#/channels/asppnMain/messages/changeUserSettingsRequest'
+  getUserSettings:
+    title: getUserSettings
+    description: >
+      Запрос позволяет получить настройки пользователя
+    action: send
+    channel:
+      $ref: '#/channels/asppnMain'
+    tags:
+      - $ref: '#/components/tags/new'
+    messages:
+      - $ref: '#/channels/asppnMain/messages/getUserSettingsRequest'
+    reply:
+      channel:
+        $ref: '#/channels/asppnMain'
+      messages:
+        - $ref: '#/channels/asppnMain/messages/getUserSettingsRequest'
+components:
+  messages:
+    getUserSettingsRequest:
+      summary: Запрос пользовательских настроек
+      payload:
+        $ref: '#/components/schemas/getUserSettingsRequest'
+      x-response:
+        $ref: '#/components/schemas/getUserSettingsReply'
+    getUserSettingsReply:
+      summary: Ответ на запрос getUserSettingsRequest
+      payload:
+        $ref: '#/components/schemas/getUserSettingsReply'
+  schemas:
+    getUserSettingsRequest:
+      description: Запрос пользовательских настроек для каждого раздела
+      properties:
+        settingsTypes:
+          type: array
+          items:
+            type: object
+            properties:
+              settingsType:
+                type: string
+                description: |
+                  - Тип настроек:
+                    - Настройки всех разделов
+                    - Атрибуты, которые отображаются над объектами схеме
+                    - Настройки списка схем
+                    - Настройки списка справочников заданного типа
+                    - Настройки для содержимого заданного типа справочников
+                    - Настройки списка сценариев
+                    - Настройки для содержимого заданного раздела сценариев
+                    - Атрибуты, которые отображаются над объектами в схеме
+                      сценария
+                    - Настройки списка расчетов
+                    - Настройки для содержимого заданного раздела плана
+                    - Атрибуты, которые отображаются над объектами в схеме плана
+                enum:
+                  - all
+                  - configurationObjectsLabels
+                  - configurationsListSettings
+                  - catalogsListSettings
+                  - catalogTypeSettings
+                  - scenariosListSettings
+                  - scenarioPartSettings
+                  - scenarioConfigurationObjectsLabels
+                  - calculationsListSettings
+                  - planPartSettings
+                  - planConfigurationObjectsLabels
+            required: [settingsType]
+      required: [settingsTypes]
+    getUserSettingsReply:
+      description: Список пользовательских настроек для заданного раздела
+      type: object
+      properties:
+        replyStatus:
+          $ref: '#/components/schemas/replyStatus'
+        replyContent:
+          oneOf:
+            - $ref: '#/components/schemas/userSettings'
+            - $ref: '#/components/schemas/replyErrors'
+      required: [replyStatus]
+      examples:
+        - replyStatus:
+            code: 200
+            status: OK
+        - replyStatus:
+            code: 400
+            status: Bad request
+          errorInfo:
+            - errorType: INVALID_ARGUMENT
+              reason: Настроек для данного раздела не существует
+              location: sorting
+        - replyStatus:
+            code: 500
+            status: Internal Server Error
+          errorInfo:
+            - errorType: INTERNAL_ERROR
+              reason: Произошла ошибка при чтении настроек из базы данных
+    userSettings:
+      type: object
+      properties:
+        configurationsListSettings:
+          description: Настройки списка схем
+          type: object
+          properties:
+            sorting:
+              $ref: '#/components/schemas/sorting'
+            filtering:
+              $ref: '#/components/schemas/filtering'
+            fieldsSelection:
+              $ref: '#/components/schemas/fieldsSelection'
+        catalogsListSettings:
+          description: Настройки списка справочников заданного типа
+          type: object
+          properties:
+            sorting:
+              $ref: '#/components/schemas/sorting'
+            filtering:
+              $ref: '#/components/schemas/filtering'
+            fieldsSelection:
+              $ref: '#/components/schemas/fieldsSelection'
+        catalogTypeSettings:
+          description: Настройки для содержимого заданного типа справочников
+          type: object
+          properties:
+            sorting:
+              $ref: '#/components/schemas/sorting'
+            fieldsSelection:
+              $ref: '#/components/schemas/fieldsSelection'
+          required: [catalogType]
+        scenariosListSettings:
+          description: Настройки списка сценариев
+          type: object
+          properties:
+            sorting:
+              $ref: '#/components/schemas/sorting'
+            filtering:
+              $ref: '#/components/schemas/filtering'
+            fieldsSelection:
+              $ref: '#/components/schemas/fieldsSelection'
+        scenarioPartSettings:
+          description: Настройки для содержимого заданного раздела сценариев
+          type: object
+          properties:
+            sorting:
+              $ref: '#/components/schemas/sorting'
+          required: [scenarioPartType]
+        calculationsListSettings:
+          description: Настройки списка расчетов
+          type: object
+          properties:
+            sorting:
+              $ref: '#/components/schemas/sorting'
+            filtering:
+              $ref: '#/components/schemas/filtering'
+            fieldsSelection:
+              $ref: '#/components/schemas/fieldsSelection'
+        planPartSettings:
+          description: Настройки для содержимого заданного раздела плана
+          type: object
+          properties:
+            sorting:
+              $ref: '#/components/schemas/sorting'
+        reportsListSettings:
+          description: Настройки списка отчетов
+          type: object
+          properties:
+            sorting:
+              $ref: '#/components/schemas/sorting'
+            filtering:
+              $ref: '#/components/schemas/filtering'
+            fieldsSelection:
+              $ref: '#/components/schemas/fieldsSelection'
+            grouping:
+              $ref: '#/components/schemas/grouping'
+    fluidSubType:
+      description: Подтип жидкости
+      type: object
+      oneOf:
+        - $ref: '#/components/parameters/productType'
+        - $ref: '#/components/parameters/oilClass'
+    file:
+      description: Файл
+      type: object
+      properties:
+        fileData:
+          description: Файл с данными
+          type: string
+          format: binary
+        fileName:
+          description: Название скачиваемого файла
+          type: string
+          examples: [<Название файла>.xlsx]
+        fileType:
+          description: Формат файла
+          type: string
+          examples: [xlsx]
+      required: [fileData, fileName, fileType]
+    paginationRequest:
+      description: Пагинация в запросе
+      type: object
+      properties:
+        limit:
+          type: number
+          format: int32
+          description: Запрашиваемое количество элементов на странице
+          example: 20
+          default: 20
+        offset:
+          type: number
+          format: int32
+          description: >
+            Запрашиваемое количество элементов, которые необходимо пропустить в
+            выборке
+          example: 2
+          default: 0
+      examples:
+        - limit: 10
+          offset: 50
+      required: [limit, offset]
+    paginationReply:
+      description: Пагинация в ответе
+      type: object
+      properties:
+        limit:
+          type: number
+          format: int32
+          description: >
+            Количество отдаваемых элементов на странице. Может отличаться от
+            запрашиваемого, если запрашиваемое количество превышает
+            установленный лимит
+          examples: [20]
+        offset:
+          type: number
+          format: int32
+          description: >
+            Количество элементов, которые было пропущено в выборке. Может
+            отличаться от запрашиваемого, если запрашиваемое количество
+            превышает общее количество элементов
+          examples: [2]
+        count:
+          type: number
+          format: int32
+          description: Общее количество элементов в выборке
+          examples: [100]
+      required: [limit, offset, count]
+    grouping:
+      description: >
+        Список полей, по которым производится группировка
+      type: array
+      items:
+        type: string
+    sorting:
+      description: Сортировка по нескольким полям
+      type: array
+      items:
+        description: Сортировка по выбранному полю
+        type: object
+        properties:
+          sortingParam:
+            type: string
+            description: Название поля, по которому происходит сортировка
+            example: createdAt
+          sortingType:
+            type: string
+            enum:
+              - ascending
+              - descending
+            description: Тип сортировки (по возрастанию, по убыванию)
+            default: descending
+        required: [sortingParam, sortingType]
+    filtering:
+      description: Фильтрация по нескольким полям
+      type: array
+      items:
+        description: Фильтрация по выбранному полю
+        type: object
+        properties:
+          fieldName:
+            type: string
+            description: Название поля, по которому происходит фильтрация
+            example: createdAt
+          filterCriteria:
+            description: >
+              Критерии фильтрации. Если выбрано несколько критериев для одного
+              поля, то они все должны быть выполнены одновременно
+            type: array
+            items:
+              type: object
+              properties:
+                filterCriteriaType:
+                  description: >
+                    Тип фильтра (значение поля равно критерию, значение поля
+                    меньше критерия, значение поля больше критерия)
+                  type: string
+                  enum:
+                    - equal
+                    - greaterThan
+                    - lessThan
+                    - oneOf
+                filterCriteriaValue:
+                  description: Значение фильтра
+                  type: array
+              required: [filterCriteriaType, filterCriteriaValue]
+        required: [fieldName, filterCriteria]
+        examples:
+          - fieldName: createdAt
+            filterCriteria:
+              - filterCriteriaType: greaterThan
+                filterCriteriaValue: [Jul 2023]
+              - filterCriteriaType: lessThan
+                filterCriteriaValue: [Jul 2024]
+          - fieldName: creatorName
+            filterCriteria:
+              - filterCriteriaType: oneOf
+                filterCriteriaValue: [Макс, Алекс]
+    onlyManuallyChangedObjects:
+      description: >
+        Только объекты, значение хотя бы одно поля которых изменялось
+        вручную
+      type: boolean
+    onlyInvalidObjects:
+      description: >
+        Только объекты, значение хотя бы одного поля которых не валидно по
+        любой из причин
+      type: boolean
+    isMyObject:
+      type: boolean
+      description: >
+        Выбрать только объекты, для которых текущий пользователь является
+        автором создания/изменения
+      examples: [true]
+    search:
+      description: >
+        Поиск по строковым полям. Объект возвращается, если строка нашлась хотя
+        бы в одном из запрашиваемых полей
+      type: object
+      properties:
+        query:
+          type: string
+          description: Строка, которая ищется в значение полей
+        fieldsName:
+          description: Список полей, в значениях которых ищется строка
+          type: array
+          items:
+            type: string
+      examples:
+        - query: Никольское
+          fieldsName: [name, visualName]
+      required:
+        - query
+        - fieldsName
+    fieldsSelection:
+      description: Список полей, которые необходимо отобразить
+      type: array
+      items:
+        type: string
+    replyStatus:
+      title: replyStatus
+      type: object
+      description: |
+        Код ответа:
+        - 200 ОК
+        - 400 Некорректный запрос
+        - 403 Недостаточно полномочий
+        - 404 Объект не найден
+        - 409 Конфликт
+        - 500 Внутрення ошибка сервера
+      properties:
+        code:
+          type: number
+          format: int
+          enum:
+            - 200
+            - 400
+            - 403
+            - 404
+            - 409
+            - 500
+        status:
+          type: string
+          enum:
+            - OK
+            - Bad request
+            - Permission denied
+            - Not found
+            - Conflict
+            - Internal Server Error
+      required: [code, status]
+    replyErrors:
+      title: replyErrors
+      type: array
+      items:
+        $ref: '#/components/schemas/errorInfo'
+    errorInfo:
+      title: errorInfo
+      description: Информация об ошибке
+      type: object
+      properties:
+        errorType:
+          description: Тип ошибки
+          type: string
+          examples: [INVALID_ARGUMENT]
+        reason:
+          description: Причина ошибки
+          type: string
+          examples: [Значение должно лежать в пределах от 0 до 200]
+        location:
+          description: Место возникновения ошибки
+          type: string
+          examples: [maxVolume]
+    createdAt:
+      description: Дата и время создания объекта
+      type: string
+      format: date-time
+      examples: [2023-02-08T18:04:28Z]
+    creatorName:
+      description: Имя пользователя, создавшего объект
+      type: string
+      examples: [Иванов А. А.]
+    lastChangedAt:
+      description: Дата и время последнего редактирования объекта
+      type: string
+      format: date-time
+      examples: [2023-02-10T18:04:28Z]
+    lastChangerName:
+      description: Имя пользователя, который последний редактировал объект
+      type: string
+      examples: [Петров Б. Б.]
+    isValid:
+      description: Является ли объект валидным
+      type: boolean
+      examples: [true]
+    discretenessTypes:
+      title: discretenessTypes
+      description: Типы дискретности времени, которые используются в объекте
+      type: array
+      items:
+        $ref: '#/components/parameters/discretenessType'
+    canBeChanged:
+      description: Можно ли изменять и удалять объект?
+      type: boolean
+      examples: [false]
+    currentChangerNames:
+      description: >
+        Имена пользователей, которые редактирует объект в данный момент
+      type: array
+      items:
+        type: string
+      example: [Иванов А. А., Петров Б. Б.]
+    dateYear:
+      type: string
+      pattern: "[0-9]{4}"
+      examples: ['2022']
+    dateMonthYear:
+      description: Номер месяца, точка, номер года
+      type: string
+      pattern: "[0-9]{2}.[0-9]{4}"
+      examples: ['01.2024']
+    dateQuarter:
+      description: Номер четверти
+      type: string
+      pattern: "[1-4]"
+      examples: ['1']
+    dateMonth:
+      description: Номер месяца
+      type: string
+      pattern: "[0-9]{2}"
+      examples: ['01']
+    fieldName:
+      description: Название поля
+      type: string
+      examples: ['Объем, л']
+    fieldValue:
+      description: Значение поля, преобразованное в строку
+      type: string
+      examples: ['15']
+    isValueValid:
+      description: Валидность значения
+      type: boolean
+      examples: [true]
+  parameters:
+    fluidType:
+      description: |
+        Тип жидкости:
+        - нефть
+        - нефтепродукты
+      enum:
+        - oil
+        - oilProduct
+      default: oil
+    productType:
+      description: |
+        Тип продукта:
+        - АБ
+        - ДТ
+        - ТС
+      enum:
+        - gasoline
+        - diesel
+        - aeroFuel
+    oilClass:
+      description: |
+        Класс нефти:
+        - Низкосернистая
+        - Сернистая
+        - Высокосернистая
+      enum:
+        - lowSulfur
+        - sulfur
+        - highSulfur
+    discretenessType:
+      description: |
+        Дискретность объекта:
+        - дни
+        - месяца
+        - кварталы
+        - года
+        - не определено
+      enum:
+        - days
+        - months
+        - quarters
+        - years
+        - none
+    fieldSourceType:
+      description: |
+        Источник происхождения значения поля:
+          - Импортировано из справочника
+          - Изменено вручную
+                type: string
+      enum:
+        - imported
+        - changedManually
+    fieldValueType:
+      description: |
+        Тип поля:
+          - строка
+          - логическое
+          - число
+          - класс
+          - список чисел (число;число)
+          - словарь (строка:число;строка:число)
+      enum:
+        - string
+        - boolean
+        - number
+        - enum
+        - number[]
+        - dict
+      examples: [number]
+  tags:
+    toBe:
+      name: toBe
+      description: Метод существует, но будет изменен
+    new:
+      name: new
+      description: Новый метод
+    asIs:
+      name: asIs
+      description: Метод существует и не будет изменен
